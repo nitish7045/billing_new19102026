@@ -629,13 +629,13 @@ export default function CoreCuttingBill({
       return "Please add at least one product item.";
     }
 
-    if (
-      items.some(
-        (item) => item.type === "product" && !item.productId
-      )
-    ) {
-      return "Every product row must be selected from the product list.";
-    }
+    // if (
+    //   items.some(
+    //     (item) => item.type === "product" && !item.productId
+    //   )
+    // ) {
+    //   return "Every product row must be selected from the product list.";
+    // }
 
     return null;
   }
