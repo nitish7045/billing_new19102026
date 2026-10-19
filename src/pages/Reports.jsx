@@ -8,6 +8,7 @@ import { supabase } from "../lib/supabase";
 
 import "./Reports.css";
 import "./Reports.components.css";
+import "./Reports.hisab-filters.css";
 
 import { useReportsData } from "../hooks/useReportsData";
 
@@ -224,6 +225,11 @@ export default function Reports({ profile }) {
   const [newHisabClient, setNewHisabClient] = useState("");
   const [creatingHisabCycle, setCreatingHisabCycle] = useState(false);
   const [selectedHisabBillIds, setSelectedHisabBillIds] = useState([]);
+  // Filters for the unassigned bills picker inside Hisab cycles.
+  const [hisabBillSearch, setHisabBillSearch] = useState("");
+  const [hisabBillStatusFilter, setHisabBillStatusFilter] = useState("unpaid");
+  const [hisabBillCompanyFilter, setHisabBillCompanyFilter] = useState("all");
+  const [hisabBillTypeFilter, setHisabBillTypeFilter] = useState("all");
 
   /*
    * ============================================================
@@ -891,6 +897,62 @@ export default function Reports({ profile }) {
       allAnalysedBills,
       statusFilter,
     ]);
+
+  // Payment status for the Hisab bill picker must use all bills and all
+  // payments, not the Overview/Bills tab's date/search filters.
+  const hisabBillPaymentStatusMap = useMemo(() => {
+    const analysed = allocatePaymentsToBills(billsWithCycle, paymentsWithCycle);
+    return new Map(
+      analysed.map((bill) => [
+        String(bill.id),
+        String(bill.paymentStatus || "Unpaid").toLowerCase(),
+      ])
+    );
+  }, [billsWithCycle, paymentsWithCycle]);
+
+  const hisabAvailableBills = useMemo(() => {
+    const query = hisabBillSearch.trim().toLowerCase();
+    return billsWithCycle.filter((bill) => {
+      if (bill.cycle_id) return false;
+
+      const status = hisabBillPaymentStatusMap.get(String(bill.id)) || "unpaid";
+      const isPaid = status === "paid";
+      if (hisabBillStatusFilter === "paid" && !isPaid) return false;
+      // Unpaid includes unpaid and partially paid bills because they still
+      // have an outstanding amount.
+      if (hisabBillStatusFilter === "unpaid" && isPaid) return false;
+
+      if (hisabBillCompanyFilter !== "all" && String(bill.company_id || "") !== String(hisabBillCompanyFilter)) return false;
+      if (hisabBillTypeFilter !== "all" && String(bill.bill_type || "") !== hisabBillTypeFilter) return false;
+
+      if (query) {
+        const searchable = [
+          bill.bill_number,
+          bill.company_name,
+          companyMap.get(bill.company_id),
+          bill.customer_to,
+          bill.customer_site,
+          bill.bill_type,
+          status,
+        ].some((value) => String(value || "").toLowerCase().includes(query));
+        if (!searchable) return false;
+      }
+      return true;
+    });
+  }, [
+    billsWithCycle,
+    hisabBillPaymentStatusMap,
+    hisabBillSearch,
+    hisabBillStatusFilter,
+    hisabBillCompanyFilter,
+    hisabBillTypeFilter,
+    companyMap,
+  ]);
+
+  const hisabBillTypes = useMemo(
+    () => Array.from(new Set(billsWithCycle.filter((bill) => !bill.cycle_id).map((bill) => String(bill.bill_type || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [billsWithCycle]
+  );
 
   /*
    * ============================================================
@@ -1867,15 +1929,63 @@ export default function Reports({ profile }) {
                 <div className="section-title-row">
                   <div><h2>Add Bills to {selectedPaymentCycle.client_name || "General"} — Cycle {selectedPaymentCycle.cycle_number}</h2><p>Only unassigned bills are shown. Original invoice records are not changed.</p></div>
                 </div>
+                <div className="hisab-bill-picker-filters" role="search" aria-label="Search and filter unassigned bills">
+                  <label className="hisab-bill-search-field">
+                    <span>Search bills</span>
+                    <input
+                      type="search"
+                      value={hisabBillSearch}
+                      onChange={(event) => setHisabBillSearch(event.target.value)}
+                      placeholder="Search bill number, company, customer..."
+                      aria-label="Search bill number, company, customer, or bill type"
+                    />
+                  </label>
+                  <label>
+                    <span>Payment status</span>
+                    <select value={hisabBillStatusFilter} onChange={(event) => setHisabBillStatusFilter(event.target.value)}>
+                      <option value="all">All bills</option>
+                      <option value="paid">Paid bills</option>
+                      <option value="unpaid">Unpaid bills (including partial)</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Company name</span>
+                    <select value={hisabBillCompanyFilter} onChange={(event) => setHisabBillCompanyFilter(event.target.value)}>
+                      <option value="all">All companies</option>
+                      {companies.map((company) => <option key={company.id} value={company.id}>{company.company_name}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Bill type</span>
+                    <select value={hisabBillTypeFilter} onChange={(event) => setHisabBillTypeFilter(event.target.value)}>
+                      <option value="all">All bill types</option>
+                      {hisabBillTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                  </label>
+                  <button type="button" className="report-btn hisab-bill-filter-reset" onClick={() => { setHisabBillSearch(""); setHisabBillStatusFilter("all"); setHisabBillCompanyFilter("all"); setHisabBillTypeFilter("all"); }}>Clear filters</button>
+                </div>
+                <div className="hisab-bill-picker-count">
+                  <span>{hisabAvailableBills.length} bill(s) match your filters</span>
+                  <span>{selectedHisabBillIds.filter((id) => hisabAvailableBills.some((bill) => String(bill.id) === String(id))).length} visible bill(s) selected</span>
+                </div>
                 <div className="hisab-available-bills">
-                  {billsWithCycle.filter((bill) => !bill.cycle_id).map((bill) => (
-                    <label className="hisab-available-bill" key={bill.id}>
-                      <input type="checkbox" checked={selectedHisabBillIds.includes(bill.id)} onChange={(event) => setSelectedHisabBillIds((old) => event.target.checked ? [...old, bill.id] : old.filter((id) => id !== bill.id))} />
-                      <span><strong>Bill {bill.bill_number || "—"}</strong><small>{bill.company_name || bill.customer_to || "Customer not specified"} · {bill.bill_date || "No date"}</small></span>
-                      <strong>₹{Number(bill.grand_total || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong>
-                    </label>
-                  ))}
-                  {!billsWithCycle.some((bill) => !bill.cycle_id) && <p>All existing bills are already assigned to a Hisab cycle.</p>}
+                  {hisabAvailableBills.map((bill) => {
+                    const paymentStatus = hisabBillPaymentStatusMap.get(String(bill.id)) || "unpaid";
+                    const isPaid = paymentStatus === "paid";
+                    return (
+                      <label className="hisab-available-bill" key={bill.id}>
+                        <input type="checkbox" checked={selectedHisabBillIds.includes(bill.id)} onChange={(event) => setSelectedHisabBillIds((old) => event.target.checked ? [...old, bill.id] : old.filter((id) => id !== bill.id))} />
+                        <span className="hisab-available-bill-details">
+                          <strong>Bill {bill.bill_number || "—"}</strong>
+                          <small>{bill.company_name || companyMap.get(bill.company_id) || bill.customer_to || "Customer not specified"} · {bill.bill_date || "No date"} · {bill.bill_type || "Type not specified"}</small>
+                        </span>
+                        <span className={`hisab-bill-payment-badge ${isPaid ? "paid" : "unpaid"}`}>{isPaid ? "PAID" : paymentStatus.includes("partial") ? "PARTIALLY PAID" : "UNPAID"}</span>
+                        <strong className="hisab-available-bill-amount">₹{Number(bill.grand_total || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong>
+                      </label>
+                    );
+                  })}
+                  {!billsWithCycle.some((bill) => !bill.cycle_id) && <p className="hisab-bill-empty-state">All existing bills are already assigned to a Hisab cycle.</p>}
+                  {billsWithCycle.some((bill) => !bill.cycle_id) && hisabAvailableBills.length === 0 && <p className="hisab-bill-empty-state">No unassigned bills match these filters. Try changing the search or clearing filters.</p>}
                 </div>
                 <button type="button" className="report-btn report-btn-primary" onClick={assignSelectedBills} disabled={!selectedHisabBillIds.length}>Assign Selected Bills ({selectedHisabBillIds.length})</button>
               </div>

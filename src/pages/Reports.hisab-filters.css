@@ -1,0 +1,173 @@
+/* Filters for the Hisab cycle's unassigned-bill picker */
+.hisab-bill-picker-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(150px, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  margin: 16px 0 10px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+.hisab-bill-picker-filters label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+.hisab-bill-picker-filters input,
+.hisab-bill-picker-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 11px;
+  color: #0f172a;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.hisab-bill-picker-filters input:focus,
+.hisab-bill-picker-filters select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 12%);
+}
+.hisab-bill-filter-reset {
+  min-height: 42px;
+  white-space: nowrap;
+}
+.hisab-bill-picker-count {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 2px 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+.hisab-available-bills {
+  display: grid;
+  gap: 8px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding: 2px 4px 4px 2px;
+}
+.hisab-available-bill {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  color: #0f172a;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.hisab-available-bill:hover {
+  background: #f8fbff;
+  border-color: #93c5fd;
+}
+.hisab-available-bill:has(input:checked) {
+  background: #eff6ff;
+  border-color: #60a5fa;
+}
+.hisab-available-bill input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: #2563eb;
+}
+.hisab-available-bill-details {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+.hisab-available-bill-details strong {
+  font-size: 13px;
+  font-weight: 750;
+}
+.hisab-available-bill-details small {
+  overflow-wrap: anywhere;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.hisab-bill-payment-badge {
+  display: inline-flex;
+  justify-content: center;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .035em;
+  white-space: nowrap;
+}
+.hisab-bill-payment-badge.paid {
+  color: #166534;
+  background: #dcfce7;
+}
+.hisab-bill-payment-badge.unpaid {
+  color: #9a3412;
+  background: #ffedd5;
+}
+.hisab-available-bill-amount {
+  color: #0f172a;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hisab-bill-empty-state {
+  margin: 0;
+  padding: 24px 16px;
+  color: #64748b;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+}
+@media (max-width: 1100px) {
+  .hisab-bill-picker-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hisab-bill-search-field {
+    grid-column: 1 / -1;
+  }
+  .hisab-bill-filter-reset {
+    justify-self: start;
+  }
+}
+@media (max-width: 640px) {
+  .hisab-bill-picker-filters {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+  .hisab-bill-search-field {
+    grid-column: auto;
+  }
+  .hisab-bill-picker-count {
+    flex-direction: column;
+  }
+  .hisab-available-bill {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 9px 10px;
+  }
+  .hisab-bill-payment-badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .hisab-available-bill-amount {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
