@@ -1,0 +1,1831 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "../lib/supabase";
+
+function ProductManagement() {
+  // ==========================================
+  // STATES
+  // ==========================================
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
+
+  const [selectedProduct, setSelectedProduct] =
+    useState(null);
+
+  const [showForm, setShowForm] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    unit: "",
+    price: "",
+  });
+
+  // ==========================================
+  // LOAD PRODUCTS
+  // ==========================================
+
+  async function loadProducts(showLoader = true) {
+    if (showLoader) {
+      setLoading(true);
+    }
+
+    try {
+      setMessage("");
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setProducts([]);
+        setMessage("❌ User not logged in.");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("product_id", {
+          ascending: true,
+        });
+
+      if (error) {
+        console.error("Load products error:", error);
+        setMessage(`❌ ${error.message}`);
+        return;
+      }
+
+      setProducts(data || []);
+
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        "❌ Something went wrong while loading products."
+      );
+
+    } finally {
+      if (showLoader) {
+        setLoading(false);
+      }
+    }
+  }
+
+  // ==========================================
+  // INITIAL LOAD
+  // ==========================================
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  // ==========================================
+  // INPUT HANDLER
+  // ==========================================
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  }
+
+  // ==========================================
+  // RESET FORM
+  // ==========================================
+
+  function resetForm() {
+    setFormData({
+      name: "",
+      unit: "",
+      price: "",
+    });
+
+    setSelectedProduct(null);
+    setShowForm(false);
+  }
+
+  // ==========================================
+  // OPEN ADD PRODUCT
+  // ==========================================
+
+  function handleOpenAddProduct() {
+    setMessage("");
+
+    setSelectedProduct(null);
+
+    setFormData({
+      name: "",
+      unit: "",
+      price: "",
+    });
+
+    setShowForm(true);
+  }
+
+  // ==========================================
+  // EDIT PRODUCT
+  // ==========================================
+
+  function handleEdit(product) {
+    setMessage("");
+
+    setSelectedProduct(product);
+
+    setFormData({
+      name: product.name || "",
+
+      unit: product.unit || "",
+
+      price:
+        product.price !== null &&
+        product.price !== undefined
+          ? String(product.price)
+          : "",
+    });
+
+    setShowForm(true);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  // ==========================================
+  // VALIDATE PRODUCT
+  // ==========================================
+
+  function validateProduct() {
+    const name =
+      formData.name.trim();
+
+    const price =
+      Number(formData.price);
+
+    if (!name) {
+      setMessage(
+        "❌ Please enter product name."
+      );
+
+      return false;
+    }
+
+    if (
+      formData.price === "" ||
+      Number.isNaN(price) ||
+      price < 0
+    ) {
+      setMessage(
+        "❌ Please enter a valid price."
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
+  // ==========================================
+  // ADD PRODUCT
+  // ==========================================
+
+  async function handleAddProduct(e) {
+    e.preventDefault();
+
+    setMessage("");
+
+    if (!validateProduct()) {
+      return;
+    }
+
+    const name =
+      formData.name.trim();
+
+    const unit =
+      formData.unit.trim()
+        ? formData.unit.trim().toUpperCase()
+        : null;
+
+    const price =
+      Number(formData.price);
+
+    try {
+      setSaving(true);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setMessage(
+          "❌ User not logged in."
+        );
+
+        return;
+      }
+
+      // INSERT PRODUCT
+      // PRODUCT ID IS GENERATED BY DATABASE
+
+      const { error } = await supabase
+        .from("products")
+        .insert([
+          {
+            user_id: user.id,
+            name,
+            unit,
+            price,
+          },
+        ]);
+
+      if (error) {
+        console.error(
+          "Add product error:",
+          error
+        );
+
+        setMessage(
+          `❌ ${error.message}`
+        );
+
+        return;
+      }
+
+      setMessage(
+        "✅ Product added successfully."
+      );
+
+      resetForm();
+
+      await loadProducts(false);
+
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        "❌ Something went wrong while adding product."
+      );
+
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ==========================================
+  // UPDATE PRODUCT
+  // ==========================================
+
+  async function handleUpdateProduct(e) {
+    e.preventDefault();
+
+    setMessage("");
+
+    if (!selectedProduct) {
+      setMessage(
+        "❌ Please select a product."
+      );
+
+      return;
+    }
+
+    if (!validateProduct()) {
+      return;
+    }
+
+    const name =
+      formData.name.trim();
+
+    const unit =
+      formData.unit.trim()
+        ? formData.unit.trim().toUpperCase()
+        : null;
+
+    const price =
+      Number(formData.price);
+
+    try {
+      setSaving(true);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setMessage(
+          "❌ User not logged in."
+        );
+
+        return;
+      }
+
+      const { error } = await supabase
+        .from("products")
+        .update({
+          name,
+          unit,
+          price,
+
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq("id", selectedProduct.id)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error(
+          "Update error:",
+          error
+        );
+
+        setMessage(
+          `❌ ${error.message}`
+        );
+
+        return;
+      }
+
+      setMessage(
+        "✅ Product updated successfully."
+      );
+
+      resetForm();
+
+      await loadProducts(false);
+
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        "❌ Something went wrong while updating product."
+      );
+
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ==========================================
+  // DELETE PRODUCT
+  // ==========================================
+
+  async function handleDelete(product) {
+    setMessage("");
+
+    const confirmed =
+      window.confirm(
+        `Delete "${product.name}"?`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setMessage(
+          "❌ User not logged in."
+        );
+
+        return;
+      }
+
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", product.id)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error(
+          "Delete error:",
+          error
+        );
+
+        setMessage(
+          `❌ ${error.message}`
+        );
+
+        return;
+      }
+
+      if (
+        selectedProduct?.id === product.id
+      ) {
+        resetForm();
+      }
+
+      setMessage(
+        "✅ Product deleted successfully."
+      );
+
+      await loadProducts(false);
+
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        "❌ Something went wrong while deleting product."
+      );
+
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ==========================================
+  // SEARCH
+  // ==========================================
+
+  const filteredProducts = useMemo(() => {
+    const searchText =
+      search.toLowerCase().trim();
+
+    if (!searchText) {
+      return products;
+    }
+
+    return products.filter(
+      (product) =>
+        String(product.product_id || "")
+          .toLowerCase()
+          .includes(searchText) ||
+
+        String(product.name || "")
+          .toLowerCase()
+          .includes(searchText) ||
+
+        String(product.unit || "")
+          .toLowerCase()
+          .includes(searchText) ||
+
+        String(product.price || "")
+          .toLowerCase()
+          .includes(searchText)
+    );
+
+  }, [products, search]);
+
+  // ==========================================
+  // PRODUCT SUGGESTIONS
+  // ==========================================
+
+  const suggestions = useMemo(() => {
+    const name =
+      formData.name.trim().toLowerCase();
+
+    if (name.length < 2) {
+      return [];
+    }
+
+    return products
+      .filter((product) =>
+        product.name
+          ?.toLowerCase()
+          .includes(name)
+      )
+      .slice(0, 5);
+
+  }, [
+    formData.name,
+    products,
+  ]);
+
+  // ==========================================
+  // USE SUGGESTION
+  // ==========================================
+
+  function useSuggestion(product) {
+    setFormData({
+      name:
+        product.name || "",
+
+      unit:
+        product.unit || "",
+
+      price:
+        product.price !== null &&
+        product.price !== undefined
+          ? String(product.price)
+          : "",
+    });
+  }
+
+  // ==========================================
+  // DOWNLOAD FILE
+  // ==========================================
+
+  function downloadFile(blob, fileName) {
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+    link.download = fileName;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  }
+
+  // ==========================================
+  // EXPORT JSON
+  // ==========================================
+
+  function exportJSON() {
+    const exportData =
+      products.map((product) => ({
+        product_id:
+          product.product_id,
+
+        name:
+          product.name,
+
+        unit:
+          product.unit,
+
+        price:
+          product.price,
+      }));
+
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          exportData,
+          null,
+          2
+        ),
+      ],
+      {
+        type:
+          "application/json",
+      }
+    );
+
+    downloadFile(
+      blob,
+      "products.json"
+    );
+
+    setMessage(
+      "✅ Products exported as JSON."
+    );
+  }
+
+  // ==========================================
+  // CSV ESCAPE
+  // ==========================================
+
+  function escapeCSV(value) {
+    const stringValue =
+      String(value ?? "");
+
+    return `"${stringValue.replace(
+      /"/g,
+      '""'
+    )}"`;
+  }
+
+  // ==========================================
+  // EXPORT CSV
+  // ==========================================
+
+  function exportCSV() {
+    const headers = [
+      "product_id",
+      "name",
+      "unit",
+      "price",
+    ];
+
+    const rows =
+      products.map((product) =>
+        [
+          escapeCSV(
+            product.product_id
+          ),
+
+          escapeCSV(
+            product.name
+          ),
+
+          escapeCSV(
+            product.unit
+          ),
+
+          escapeCSV(
+            product.price
+          ),
+        ].join(",")
+      );
+
+    const csvContent =
+      [
+        headers.join(","),
+        ...rows,
+      ].join("\n");
+
+    const blob = new Blob(
+      [csvContent],
+      {
+        type:
+          "text/csv;charset=utf-8;",
+      }
+    );
+
+    downloadFile(
+      blob,
+      "products.csv"
+    );
+
+    setMessage(
+      "✅ Products exported as CSV."
+    );
+  }
+
+  // ==========================================
+  // CSV PARSER
+  // ==========================================
+
+  function parseCSV(text) {
+    const lines =
+      text
+        .split(/\r?\n/)
+        .filter((line) =>
+          line.trim()
+        );
+
+    if (lines.length < 2) {
+      return [];
+    }
+
+    const parseLine = (line) => {
+      const result = [];
+
+      let current = "";
+      let insideQuotes = false;
+
+      for (
+        let i = 0;
+        i < line.length;
+        i++
+      ) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+
+        if (
+          char === '"' &&
+          insideQuotes &&
+          nextChar === '"'
+        ) {
+          current += '"';
+          i++;
+
+        } else if (char === '"') {
+          insideQuotes =
+            !insideQuotes;
+
+        } else if (
+          char === "," &&
+          !insideQuotes
+        ) {
+          result.push(
+            current.trim()
+          );
+
+          current = "";
+
+        } else {
+          current += char;
+        }
+      }
+
+      result.push(
+        current.trim()
+      );
+
+      return result;
+    };
+
+    const headers =
+      parseLine(lines[0]).map(
+        (header) =>
+          header
+            .replace(/^"|"$/g, "")
+            .trim()
+            .toLowerCase()
+      );
+
+    return lines
+      .slice(1)
+      .map((line) => {
+        const values =
+          parseLine(line);
+
+        const object = {};
+
+        headers.forEach(
+          (header, index) => {
+            object[header] =
+              values[index]
+                ?.replace(
+                  /^"|"$/g,
+                  ""
+                )
+                .trim();
+          }
+        );
+
+        return object;
+      });
+  }
+
+  // ==========================================
+  // IMPORT PRODUCTS
+  // ==========================================
+
+  async function handleImport(e) {
+    const file =
+      e.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setMessage("");
+
+    try {
+      setImporting(true);
+
+      const fileName =
+        file.name.toLowerCase();
+
+      const text =
+        await file.text();
+
+      let importedProducts = [];
+
+      // JSON
+
+      if (
+        fileName.endsWith(".json")
+      ) {
+        const jsonData =
+          JSON.parse(text);
+
+        if (!Array.isArray(jsonData)) {
+          setMessage(
+            "❌ JSON must contain an array of products."
+          );
+
+          return;
+        }
+
+        importedProducts =
+          jsonData;
+
+      }
+
+      // CSV
+
+      else if (
+        fileName.endsWith(".csv")
+      ) {
+        importedProducts =
+          parseCSV(text);
+
+      }
+
+      else {
+        setMessage(
+          "❌ Please select a JSON or CSV file."
+        );
+
+        return;
+      }
+
+      if (
+        importedProducts.length === 0
+      ) {
+        setMessage(
+          "❌ No products found in this file."
+        );
+
+        return;
+      }
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setMessage(
+          "❌ User not logged in."
+        );
+
+        return;
+      }
+
+      // CLEAN DATA
+      // PRODUCT ID IS NOT IMPORTED
+      // DATABASE GENERATES IT
+
+      const cleanedProducts =
+        importedProducts
+          .map((product) => ({
+            user_id: user.id,
+
+            name:
+              String(
+                product.name ?? ""
+              ).trim(),
+
+            unit:
+              product.unit
+                ? String(product.unit)
+                    .trim()
+                    .toUpperCase()
+                : null,
+
+            price:
+              Number(
+                product.price ?? 0
+              ),
+          }))
+          .filter(
+            (product) =>
+              product.name &&
+              !Number.isNaN(
+                product.price
+              )
+          );
+
+      if (
+        cleanedProducts.length === 0
+      ) {
+        setMessage(
+          "❌ No valid products found. Required fields: name and price."
+        );
+
+        return;
+      }
+
+      // INSERT PRODUCTS
+      // DATABASE AUTO-GENERATES PRODUCT ID
+
+      const { error } =
+        await supabase
+          .from("products")
+          .insert(
+            cleanedProducts
+          );
+
+      if (error) {
+        console.error(
+          "Import error:",
+          error
+        );
+
+        setMessage(
+          `❌ ${error.message}`
+        );
+
+        return;
+      }
+
+      await loadProducts(false);
+
+      setMessage(
+        `✅ ${cleanedProducts.length} products imported successfully.`
+      );
+
+    } catch (error) {
+      console.error(
+        "Import error:",
+        error
+      );
+
+      if (
+        error instanceof SyntaxError
+      ) {
+        setMessage(
+          "❌ Invalid JSON file."
+        );
+      } else {
+        setMessage(
+          "❌ Something went wrong while importing products."
+        );
+      }
+
+    } finally {
+      setImporting(false);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value =
+          "";
+      }
+    }
+  }
+
+  // ==========================================
+  // UI
+  // ==========================================
+
+  return (
+    <div style={styles.container}>
+
+      {/* HEADER */}
+
+      <div style={styles.header}>
+
+        <div>
+          <h1 style={styles.title}>
+            📦 Product Management
+          </h1>
+
+          <p style={styles.subtitle}>
+            Add, edit, search, import and export your products.
+          </p>
+        </div>
+
+        <div style={styles.headerActions}>
+
+          <button
+            type="button"
+            onClick={() =>
+              fileInputRef.current?.click()
+            }
+            disabled={importing}
+            style={styles.importButton}
+          >
+            {importing
+              ? "Importing..."
+              : "📥 Import"}
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.csv"
+            onChange={handleImport}
+            style={{ display: "none" }}
+          />
+
+          <button
+            type="button"
+            onClick={handleOpenAddProduct}
+            style={styles.addButton}
+          >
+            ➕ Add Product
+          </button>
+
+        </div>
+
+      </div>
+
+
+      {/* ADD / EDIT FORM */}
+
+      {showForm && (
+
+        <div style={styles.formCard}>
+
+          <div style={styles.formHeader}>
+
+            <div>
+
+              <h2 style={styles.sectionTitle}>
+                {selectedProduct
+                  ? `Edit Product #${selectedProduct.product_id}`
+                  : "Add New Product"}
+              </h2>
+
+              <p style={styles.formDescription}>
+                {selectedProduct
+                  ? "Update the selected product details."
+                  : "Product ID will be generated automatically."}
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              onClick={resetForm}
+              style={styles.closeButton}
+            >
+              ✕
+            </button>
+
+          </div>
+
+
+          <form
+            onSubmit={
+              selectedProduct
+                ? handleUpdateProduct
+                : handleAddProduct
+            }
+          >
+
+            <div style={styles.formGrid}>
+
+              {/* PRODUCT NAME */}
+
+              <div
+                style={{
+                  ...styles.field,
+                  position: "relative",
+                }}
+              >
+
+                <label style={styles.label}>
+                  Product Name *
+                </label>
+
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Example: Butterfly Valve"
+                  style={styles.input}
+                  disabled={saving}
+                  autoComplete="off"
+                />
+
+                {!selectedProduct &&
+                  suggestions.length > 0 && (
+
+                  <div style={styles.suggestionBox}>
+
+                    <div
+                      style={styles.suggestionTitle}
+                    >
+                      Similar existing products
+                    </div>
+
+                    {suggestions.map(
+                      (product) => (
+
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() =>
+                            useSuggestion(product)
+                          }
+                          style={
+                            styles.suggestionItem
+                          }
+                        >
+
+                          <strong>
+                            {product.name}
+                          </strong>
+
+                          <span>
+                            #{product.product_id}
+                            {" • "}
+                            {product.unit || "No Unit"}
+                            {" • "}
+                            ₹{product.price}
+                          </span>
+
+                        </button>
+
+                      )
+                    )}
+
+                  </div>
+
+                )}
+
+              </div>
+
+
+              {/* UNIT */}
+
+              <div style={styles.field}>
+
+                <label style={styles.label}>
+                  Unit (Optional)
+                </label>
+
+                <input
+                  type="text"
+                  name="unit"
+                  value={formData.unit}
+                  onChange={handleChange}
+                  placeholder="NOS, KG, PCS..."
+                  style={styles.input}
+                  disabled={saving}
+                />
+
+              </div>
+
+
+              {/* PRICE */}
+
+              <div style={styles.field}>
+
+                <label style={styles.label}>
+                  Price *
+                </label>
+
+                <input
+                  type="number"
+                  name="price"
+                  min="0"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  style={styles.input}
+                  disabled={saving}
+                />
+
+              </div>
+
+            </div>
+
+
+            <div style={styles.buttonRow}>
+
+              <button
+                type="submit"
+                disabled={saving}
+                style={
+                  selectedProduct
+                    ? styles.updateButton
+                    : styles.saveButton
+                }
+              >
+                {saving
+                  ? "Saving..."
+                  : selectedProduct
+                  ? "💾 Update Product"
+                  : "➕ Save Product"}
+              </button>
+
+              <button
+                type="button"
+                onClick={resetForm}
+                disabled={saving}
+                style={styles.cancelButton}
+              >
+                Cancel
+              </button>
+
+            </div>
+
+          </form>
+
+        </div>
+
+      )}
+
+
+      {/* MESSAGE */}
+
+      {message && (
+
+        <div
+          style={{
+            ...styles.message,
+
+            ...(message.startsWith("❌")
+              ? styles.errorMessage
+              : styles.successMessage),
+          }}
+        >
+          {message}
+        </div>
+
+      )}
+
+
+      {/* PRODUCT LIST */}
+
+      <div style={styles.listCard}>
+
+        <div style={styles.listHeader}>
+
+          <div>
+
+            <h2 style={styles.sectionTitle}>
+              All Products
+            </h2>
+
+            <p style={styles.countText}>
+              {products.length} product
+              {products.length !== 1
+                ? "s"
+                : ""} saved
+            </p>
+
+          </div>
+
+
+          <div style={styles.listActions}>
+
+            <input
+              type="text"
+              placeholder="🔍 Search ID, name, unit or price..."
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+              style={styles.searchInput}
+            />
+
+            <button
+              type="button"
+              onClick={exportJSON}
+              disabled={products.length === 0}
+              style={styles.exportButton}
+            >
+              JSON ↓
+            </button>
+
+            <button
+              type="button"
+              onClick={exportCSV}
+              disabled={products.length === 0}
+              style={styles.exportButton}
+            >
+              CSV ↓
+            </button>
+
+          </div>
+
+        </div>
+
+
+        {loading && (
+
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>
+              ⏳
+            </div>
+
+            <h3>
+              Loading products...
+            </h3>
+          </div>
+
+        )}
+
+
+        {!loading &&
+          filteredProducts.length === 0 && (
+
+          <div style={styles.emptyState}>
+
+            <div style={styles.emptyIcon}>
+              📦
+            </div>
+
+            <h3 style={styles.emptyTitle}>
+              {search
+                ? "No matching products found"
+                : "No products added yet"}
+            </h3>
+
+            <p style={styles.emptyText}>
+              {search
+                ? "Try searching with a different keyword."
+                : "Click Add Product to create your first product."}
+            </p>
+
+          </div>
+
+        )}
+
+
+        {!loading &&
+          filteredProducts.length > 0 && (
+
+          <div style={styles.tableWrapper}>
+
+            <table style={styles.table}>
+
+              <thead>
+
+                <tr>
+
+                  <th style={styles.th}>
+                    #
+                  </th>
+
+                  <th style={styles.th}>
+                    Product ID
+                  </th>
+
+                  <th style={styles.th}>
+                    Product Name
+                  </th>
+
+                  <th style={styles.th}>
+                    Unit
+                  </th>
+
+                  <th style={styles.th}>
+                    Price
+                  </th>
+
+                  <th style={styles.th}>
+                    Actions
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody>
+
+                {filteredProducts.map(
+                  (product, index) => (
+
+                    <tr
+                      key={product.id}
+                      style={styles.row}
+                    >
+
+                      <td style={styles.td}>
+                        {index + 1}
+                      </td>
+
+                      <td style={styles.td}>
+
+                        <span
+                          style={
+                            styles.productIdBadge
+                          }
+                        >
+                          #{product.product_id}
+                        </span>
+
+                      </td>
+
+                      <td style={styles.td}>
+                        <strong>
+                          {product.name}
+                        </strong>
+                      </td>
+
+                      <td style={styles.td}>
+                        {product.unit || "-"}
+                      </td>
+
+                      <td style={styles.td}>
+                        ₹
+                        {Number(
+                          product.price
+                        ).toLocaleString(
+                          "en-IN",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }
+                        )}
+                      </td>
+
+                      <td style={styles.td}>
+
+                        <div
+                          style={
+                            styles.actionButtons
+                          }
+                        >
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleEdit(product)
+                            }
+                            style={
+                              styles.editButton
+                            }
+                          >
+                            ✏️ Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDelete(product)
+                            }
+                            disabled={saving}
+                            style={
+                              styles.deleteButton
+                            }
+                          >
+                            🗑 Delete
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+
+                  )
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
+
+// ==========================================
+// STYLES
+// ==========================================
+
+const styles = {
+  container: {
+    width: "100%",
+    maxWidth: "1400px",
+    margin: "0 auto",
+    boxSizing: "border-box",
+  },
+
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "20px",
+    flexWrap: "wrap",
+    marginBottom: "25px",
+  },
+
+  title: {
+    margin: 0,
+    fontSize: "28px",
+    color: "#1f2937",
+  },
+
+  subtitle: {
+    margin: "8px 0 0",
+    color: "#6b7280",
+    fontSize: "15px",
+  },
+
+  headerActions: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+
+  addButton: {
+    padding: "11px 18px",
+    border: "none",
+    borderRadius: "9px",
+    background: "#16a34a",
+    color: "white",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+
+  importButton: {
+    padding: "11px 18px",
+    border: "1px solid #d1d5db",
+    borderRadius: "9px",
+    background: "white",
+    color: "#374151",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+
+  formCard: {
+    background: "white",
+    border: "1px solid #e5e7eb",
+    borderRadius: "14px",
+    padding: "25px",
+    marginBottom: "20px",
+    boxShadow: "0 3px 12px rgba(0,0,0,0.05)",
+  },
+
+  formHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "15px",
+  },
+
+  sectionTitle: {
+    margin: 0,
+    fontSize: "20px",
+    color: "#1f2937",
+  },
+
+  formDescription: {
+    margin: "6px 0 0",
+    color: "#6b7280",
+    fontSize: "14px",
+  },
+
+  closeButton: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "8px",
+    border: "1px solid #e5e7eb",
+    background: "#f9fafb",
+    cursor: "pointer",
+  },
+
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(210px, 1fr))",
+    gap: "18px",
+    marginTop: "25px",
+  },
+
+  field: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+
+  label: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#374151",
+  },
+
+  input: {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: "8px",
+    border: "1px solid #d1d5db",
+    fontSize: "14px",
+    boxSizing: "border-box",
+  },
+
+  buttonRow: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "25px",
+  },
+
+  saveButton: {
+    padding: "11px 20px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#16a34a",
+    color: "white",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+
+  updateButton: {
+    padding: "11px 20px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#2563eb",
+    color: "white",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+
+  cancelButton: {
+    padding: "11px 20px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    background: "white",
+    cursor: "pointer",
+  },
+
+  message: {
+    padding: "14px 18px",
+    borderRadius: "10px",
+    marginBottom: "20px",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+
+  successMessage: {
+    background: "#dcfce7",
+    border: "1px solid #86efac",
+    color: "#166534",
+  },
+
+  errorMessage: {
+    background: "#fee2e2",
+    border: "1px solid #fca5a5",
+    color: "#991b1b",
+  },
+
+  listCard: {
+    background: "white",
+    border: "1px solid #e5e7eb",
+    borderRadius: "14px",
+    padding: "25px",
+    boxShadow: "0 3px 12px rgba(0,0,0,0.04)",
+  },
+
+  listHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    flexWrap: "wrap",
+    marginBottom: "20px",
+  },
+
+  countText: {
+    margin: "5px 0 0",
+    color: "#6b7280",
+    fontSize: "14px",
+  },
+
+  listActions: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+
+  searchInput: {
+    minWidth: "280px",
+    padding: "11px 14px",
+    borderRadius: "8px",
+    border: "1px solid #d1d5db",
+    fontSize: "14px",
+  },
+
+  exportButton: {
+    padding: "11px 14px",
+    border: "1px solid #d1d5db",
+    background: "white",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
+
+  tableWrapper: {
+    width: "100%",
+    overflowX: "auto",
+    border: "1px solid #e5e7eb",
+    borderRadius: "10px",
+  },
+
+  table: {
+    width: "100%",
+    minWidth: "800px",
+    borderCollapse: "collapse",
+  },
+
+  th: {
+    background: "#f8fafc",
+    padding: "14px",
+    textAlign: "left",
+    fontSize: "13px",
+    color: "#475569",
+    borderBottom: "1px solid #e5e7eb",
+  },
+
+  td: {
+    padding: "14px",
+    fontSize: "14px",
+    color: "#374151",
+    borderBottom: "1px solid #f1f5f9",
+  },
+
+  row: {
+    background: "white",
+  },
+
+  productIdBadge: {
+    display: "inline-block",
+    padding: "4px 9px",
+    borderRadius: "6px",
+    background: "#f1f5f9",
+    color: "#475569",
+    fontWeight: "600",
+    fontSize: "13px",
+  },
+
+  actionButtons: {
+    display: "flex",
+    gap: "8px",
+  },
+
+  editButton: {
+    padding: "7px 11px",
+    border: "1px solid #bfdbfe",
+    background: "#eff6ff",
+    color: "#2563eb",
+    borderRadius: "7px",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
+
+  deleteButton: {
+    padding: "7px 11px",
+    border: "1px solid #fecaca",
+    background: "#fef2f2",
+    color: "#dc2626",
+    borderRadius: "7px",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
+
+  emptyState: {
+    minHeight: "280px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center",
+    color: "#6b7280",
+  },
+
+  emptyIcon: {
+    fontSize: "42px",
+    marginBottom: "10px",
+  },
+
+  emptyTitle: {
+    margin: "5px 0",
+    color: "#374151",
+  },
+
+  emptyText: {
+    margin: "5px 0",
+  },
+
+  suggestionBox: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    background: "white",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    marginTop: "4px",
+    zIndex: 20,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+    overflow: "hidden",
+  },
+
+  suggestionTitle: {
+    padding: "9px 12px",
+    fontSize: "12px",
+    fontWeight: "700",
+    color: "#6b7280",
+    background: "#f8fafc",
+    borderBottom: "1px solid #e5e7eb",
+  },
+
+  suggestionItem: {
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    gap: "3px",
+    padding: "10px 12px",
+    border: "none",
+    borderBottom: "1px solid #f1f5f9",
+    background: "white",
+    textAlign: "left",
+    cursor: "pointer",
+    color: "#374151",
+  },
+};
+
+export default ProductManagement;

@@ -1,0 +1,426 @@
+
+@import "./BillPrintBase.css";
+
+/* =========================================================
+   Normal + Core Cutting Bill
+   ========================================================= */
+
+.normal-bill-label {
+  text-align: center;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  text-decoration: underline;
+  margin: 0 0 4px;
+  color: #555;
+}
+
+/* Company Header */
+
+.normal-company {
+  min-height: 21mm;
+  padding: 2mm 2mm 1mm;
+}
+
+.normal-company h1 {
+  font-size: 42px;
+  line-height: 1.1;
+  margin: 0 0 6px;
+}
+
+.normal-company p {
+  white-space: normal;
+  font-size: 12px;
+}
+
+/* Bill Information */
+
+.normal-info {
+  display: grid;
+  grid-template-columns: 2fr 0.65fr;
+  min-height: 30mm;
+  margin-top: 4mm;
+  margin-bottom: 8px !important;
+  padding-bottom: 8px !important;
+  border: 1px solid #222;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.normal-customer {
+  position: relative;
+  padding: 15px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  border-right: none;
+  box-sizing: border-box;
+}
+
+.normal-to,
+.normal-site {
+  display: grid;
+  grid-template-columns: 45px minmax(0, 1fr);
+  gap: 3px;
+  min-width: 0;
+}
+
+.normal-to span,
+.normal-site span {
+  display: block;
+  min-width: 0;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.4;
+}
+
+/* Bill Number and Date */
+
+.normal-meta {
+  border-left: none !important;
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.normal-meta > div {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 3px;
+  min-height: 25px;
+}
+
+.normal-meta span {
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   Items Table
+   ========================================================= */
+
+.normal-items {
+  display: table;
+  width: 100%;
+  margin-top: 0 !important;
+  margin-bottom: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.normal-items th,
+.normal-items td {
+  border: 1px solid #222;
+  box-sizing: border-box;
+}
+
+.normal-items th {
+  height: 6mm;
+  padding: 2px 3px;
+  background: #ffff00 !important;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.05;
+  vertical-align: middle;
+}
+
+.normal-items td {
+  height: 5mm;
+  padding: 1px 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.05;
+  vertical-align: middle;
+}
+
+/* Column Widths */
+
+.normal-col-sr {
+  width: 6%;
+}
+
+.normal-col-particular {
+  width: 47%;
+}
+
+.normal-col-qty {
+  width: 9%;
+}
+
+.normal-col-unit {
+  width: 10%;
+}
+
+.normal-col-rate {
+  width: 12%;
+}
+
+.normal-col-amount {
+  width: 16%;
+}
+
+.normal-items td:first-child,
+.normal-items td:nth-child(3),
+.normal-items td:nth-child(4) {
+  text-align: center;
+}
+
+.normal-items td:nth-child(5),
+.normal-items td:nth-child(6) {
+  text-align: right;
+}
+
+/* Blank Rows */
+
+.normal-items tbody tr.bill-print-blank-row,
+.normal-items tbody tr.bill-print-blank-row td {
+  height: 5mm !important;
+  min-height: 0 !important;
+  padding: 1px 3px !important;
+  line-height: 1.05 !important;
+  vertical-align: middle !important;
+  border: 1px solid #222 !important;
+}
+
+/* Heading Rows */
+
+.normal-items .bill-print-heading-row td {
+  border: 1px solid #222;
+  vertical-align: middle;
+}
+
+/* =========================================================
+   Amount in Words + Total
+   ========================================================= */
+
+.normal-summary {
+  display: grid;
+  grid-template-columns: 72% 12% 16%;
+  width: 100%;
+  min-height: 18mm;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid #222;
+  border-right: 1px solid #222;
+  border-bottom: 1px solid #222;
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.normal-summary > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+/* Amount in Words */
+
+.normal-words {
+  grid-column: 1;
+  justify-content: flex-start !important;
+  gap: 4px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  border-right: 1px solid #222;
+}
+
+.normal-words strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Total Label */
+
+.normal-total-label {
+  grid-column: 2;
+  border-right: 1px solid #222;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.normal-total-label strong {
+  font-size: 12px;
+}
+
+/* Numeric Total */
+
+.normal-total-value {
+  grid-column: 3;
+  text-align: right;
+  justify-content: flex-end !important;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.normal-total-value strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   Footer
+   ========================================================= */
+
+.normal-footer {
+  min-height: 0;
+}
+
+.normal-footer-no-bank {
+  display: grid !important;
+  grid-template-columns: 65% 35% !important;
+  width: 100%;
+}
+
+.normal-footer-no-bank .bill-print-signature {
+  grid-column: 2 !important;
+  width: 100%;
+  justify-self: stretch;
+  text-align: center !important;
+  align-items: center !important;
+}
+
+/* Signature */
+
+.bill-print-signature-image {
+  display: block;
+  width: 42mm;
+  height: 10mm;
+  object-fit: contain;
+  margin: 2mm auto 0;
+}
+
+.bill-print-sign-space {
+  width: 42mm;
+  height: 18mm;
+  margin: 2mm auto 0;
+}
+
+.bill-print-signature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* =========================================================
+   Print and Save as PDF
+   ========================================================= */
+
+@media print {
+  .normal-bill-label,
+  .normal-company,
+  .normal-info,
+  .normal-items,
+  .normal-summary,
+  .normal-footer {
+    max-width: 100%;
+  }
+
+  .normal-info {
+    min-height: 30mm;
+    margin-top: 4mm !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .normal-meta {
+    border-left: none !important;
+  }
+
+  /* Compact table headings */
+
+  .normal-items {
+    display: table !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border-collapse: collapse;
+  }
+
+  .normal-items tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .normal-items th {
+    height: 6mm !important;
+    padding: 2px 3px !important;
+    font-size: 12px !important;
+    line-height: 1.05 !important;
+  }
+
+  /* Compact regular item rows */
+
+  .normal-items td {
+    height: 5mm !important;
+    padding: 1px 3px !important;
+    font-size: 12px !important;
+    line-height: 1.05 !important;
+  }
+
+  /* Compact blank rows */
+
+  .normal-items tbody tr.bill-print-blank-row,
+  .normal-items tbody tr.bill-print-blank-row td {
+    height: 5mm !important;
+    min-height: 0 !important;
+    padding: 1px 3px !important;
+    line-height: 1.05 !important;
+    vertical-align: middle !important;
+    border: 1px solid #222 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .normal-summary {
+    min-height: 10mm;
+    grid-template-columns: 72% 12% 16%;
+  }
+
+  .normal-summary > div {
+    padding: 6px;
+  }
+
+  .normal-words {
+    border-right: 1px solid #222;
+  }
+
+  .normal-total-label {
+    border-right: 1px solid #222;
+  }
+
+  .normal-footer {
+    padding-top: 5px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .normal-footer-no-bank {
+    display: grid !important;
+    grid-template-columns: 65% 35% !important;
+    width: 100% !important;
+  }
+
+  .normal-footer-no-bank .bill-print-signature {
+    grid-column: 2 !important;
+    width: 100% !important;
+    text-align: center !important;
+    align-items: center !important;
+  }
+
+  .bill-print-signature-image {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

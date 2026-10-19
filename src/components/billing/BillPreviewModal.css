@@ -1,0 +1,111 @@
+.bill-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  background: #e9edf3;
+  color: #172033;
+}
+.bill-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 18px;
+  background: #fff;
+  border-bottom: 1px solid #d7dce5;
+  box-shadow: 0 2px 8px rgba(16,24,40,.08);
+}
+.bill-preview-toolbar > div:first-child { display: flex; flex-direction: column; gap: 3px; }
+.bill-preview-toolbar strong { font-size: 15px; }
+.bill-preview-toolbar span { font-size: 12px; color: #667085; }
+.bill-preview-toolbar-actions { display: flex; gap: 8px; }
+.bill-preview-toolbar button {
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 7px;
+  font: 700 12px Arial, sans-serif;
+  cursor: pointer;
+}
+.bill-preview-close { background: #fff; border: 1px solid #cfd5df; color: #344054; }
+.bill-preview-export { background: #5148d7; border: 1px solid #5148d7; color: #fff; }
+.bill-preview-scroll { flex: 1; overflow: auto; padding: 24px; }
+.bill-preview-scroll .bill-print-sheet { margin: 0 auto; }
+@media (max-width: 650px) {
+  .bill-preview-toolbar { align-items: flex-start; flex-direction: column; }
+  .bill-preview-toolbar-actions { width: 100%; }
+  .bill-preview-toolbar-actions button { flex: 1; }
+  .bill-preview-scroll { padding: 8px; }
+}
+@media print {
+  @page { size: A4 portrait; margin: 8mm; }
+  html, body, #root { background: #fff !important; margin: 0 !important; padding: 0 !important; width: auto !important; min-height: 0 !important; height: auto !important; overflow: visible !important; }
+  .bill-preview-overlay { position: static !important; inset: auto !important; display: block !important; width: 100% !important; height: auto !important; min-height: 0 !important; background: #fff !important; overflow: visible !important; }
+  .bill-preview-toolbar { display: none !important; }
+  .bill-preview-scroll { display: block !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; height: auto !important; }
+  .bill-preview-scroll .bill-print-sheet { margin: 0 auto !important; box-shadow: none !important; }
+}
+.bill-preview-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bill-preview-print,
+.bill-preview-export,
+.bill-preview-close {
+  cursor: pointer;
+  padding: 9px 15px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bill-preview-print {
+  background: #ffffff;
+  color: #222222;
+  border: 1px solid #cbd5e1;
+}
+
+.bill-preview-export {
+  background: #4f46e5;
+  color: #ffffff;
+  border: 1px solid #4f46e5;
+}
+
+.bill-preview-close {
+  background: #ffffff;
+  color: #222222;
+  border: 1px solid #cbd5e1;
+}
+
+@media print {
+  .bill-preview-toolbar,
+  .bill-preview-overlay > .bill-preview-toolbar {
+    display: none !important;
+  }
+
+  .bill-preview-overlay {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .bill-preview-scroll {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+}

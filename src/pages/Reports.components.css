@@ -1,0 +1,291 @@
+/* ============================================================
+   REPORTS COMPONENT LAYOUT
+   Add/merge this with the existing Reports.css
+============================================================ */
+
+.reports-page {
+  min-height: 100%;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.reports-loading {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+}
+
+.report-card,
+.filters-card,
+.summary-grid {
+  box-sizing: border-box;
+}
+
+.settlement-status {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.settlement-clear {
+  background: #e9f8ef;
+  color: #137333;
+  border: 1px solid #b7e1c2;
+}
+
+.settlement-pending {
+  background: #fff5e6;
+  color: #9a5b00;
+  border: 1px solid #f2cf95;
+}
+
+/* ============================================================
+   TABS / COMPONENT SECTIONS
+============================================================ */
+
+.reports-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 5px;
+  border: 1px solid #e1e6ee;
+  border-radius: 10px;
+  background: #f7f9fc;
+  overflow-x: auto;
+}
+
+.reports-tab {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 7px;
+  padding: 9px 14px;
+  background: transparent;
+  color: #526071;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reports-tab:hover {
+  background: #edf2f8;
+}
+
+.reports-tab.active {
+  background: #ffffff;
+  color: #2458ad;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.10);
+}
+
+.report-section-content {
+  min-width: 0;
+}
+
+@media (max-width: 800px) {
+  .reports-page {
+    padding: 10px;
+  }
+
+  .reports-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .reports-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+/* ============================================================
+   RECEIVED PAYMENT CYCLE FILTER
+   ============================================================ */
+
+.received-payment-cycle-filter {
+  margin-bottom: 14px;
+}
+
+.received-payment-cycle-filter-inner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 4px;
+}
+
+.received-payment-cycle-filter-inner > div:first-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 210px;
+}
+
+.received-payment-cycle-filter-inner label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #17345f;
+  margin-bottom: 4px;
+}
+
+.received-payment-cycle-filter-inner small {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.received-payment-cycle-filter-inner select {
+  min-width: 250px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+  color: #172033;
+  font-weight: 600;
+}
+
+.received-payment-cycle-info {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: #eef4ff;
+  border: 1px solid #c7d8ff;
+  color: #2457b7;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   RECEIVED PAYMENT TABLE
+   ============================================================ */
+
+.received-payment-table th:first-child,
+.received-payment-table td:first-child {
+  text-align: center;
+}
+
+.received-payment-table td {
+  vertical-align: middle;
+}
+
+.received-payment-table td strong {
+  white-space: nowrap;
+}
+
+.received-payment-count {
+  display: block;
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+
+/* ============================================================
+   CYCLE BADGE
+   ============================================================ */
+
+.received-payment-table
+.hisab-cycle-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   CYCLE SUMMARY
+   ============================================================ */
+
+.hisab-cycle-record-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hisab-cycle-record-summary > div {
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fafbfd;
+}
+
+.hisab-cycle-record-summary span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hisab-cycle-record-summary strong {
+  display: block;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+  .received-payment-cycle-filter-inner {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .received-payment-cycle-filter-inner select {
+    width: 100%;
+  }
+
+  .hisab-cycle-record-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Hisab client management actions */
+.hisab-client-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.report-btn-danger {
+  color: #b91c1c !important;
+  border: 1px solid #fecaca !important;
+  background: #fff7f7 !important;
+}
+
+.report-btn-danger:hover {
+  background: #fee2e2 !important;
+}
+
+.hisab-assigned-bills {
+  margin-top: 16px;
+}
+
+.hisab-assigned-bills .section-title-row p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.hisab-assigned-bills .report-btn-danger {
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .hisab-client-actions {
+    flex-direction: column;
+  }
+
+  .hisab-client-actions .report-btn {
+    width: 100%;
+  }
+}

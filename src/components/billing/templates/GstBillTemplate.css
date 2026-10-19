@@ -1,0 +1,338 @@
+
+@import "./BillPrintBase.css";
+
+/* GST company header */
+.gst-company {
+  min-height: 27mm;
+  padding: 2mm 3mm 0mm;
+}
+
+.gst-company h1 {
+  font-size: 29px;
+  margin-bottom: 9px;
+}
+
+.gst-company p {
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+/* Invoice title */
+.gst-invoice-title {
+  border-left: 1px solid #222;
+  border-right: 1px solid #222;
+  border-bottom: 1px solid #222;
+  text-align: center;
+  padding: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Customer and invoice details */
+.gst-info {
+  display: grid;
+  grid-template-columns: 2fr 1.02fr;
+  min-height: 28mm;
+  border-left: 1px solid #222;
+  border-right: 1px solid #222;
+  border-bottom: 1px solid #222;
+}
+
+.gst-customer {
+  position: relative;
+  border-right: 1px solid #222;
+  padding: 5px 6px;
+  min-width: 0;
+}
+
+.gst-to {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 3px;
+}
+
+.gst-to span {
+  overflow-wrap: anywhere;
+}
+
+.gst-site {
+  position: absolute;
+  bottom: 5%;
+  left: 6px;
+  right: 6px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 3px;
+}
+
+.gst-site span {
+  overflow-wrap: anywhere;
+}
+
+.gst-meta {
+  display: grid;
+  grid-template-columns: 23% 44%;
+  min-width: 0;
+}
+
+.gst-meta-row {
+  display: contents;
+}
+
+.gst-meta-row strong,
+.gst-meta-row span {
+  padding: 8px 6px;
+  min-height: 26px;
+  /* border-bottom: 1px solid #222; */
+  overflow-wrap: anywhere;
+}
+/* 
+.gst-meta-row strong {
+  border-right: 1px solid #222;
+} */
+
+.gst-meta-row span {
+  font-weight: 700;
+}
+
+.gst-meta-row:last-child strong,
+.gst-meta-row:last-child span {
+  border-bottom: 0;
+}
+
+/* GST items table */
+.gst-items {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.gst-items th,
+.gst-items td {
+  border: 1px solid #222;
+}
+
+.gst-items th {
+  height: 7mm;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.gst-items td {
+  height: auto;
+  padding: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gst-col-sr {
+  width: 5%;
+}
+
+.gst-col-particular {
+  width: 45%;
+}
+
+.gst-col-qty {
+  width: 8%;
+}
+
+.gst-col-unit {
+  width: 8%;
+}
+
+.gst-col-rate {
+  width: 10%;
+}
+
+.gst-col-amount {
+  width: 15.88%;
+}
+
+.gst-items td:first-child,
+.gst-items td:nth-child(3),
+.gst-items td:nth-child(4) {
+  text-align: center;
+}
+
+.gst-items td:nth-child(5),
+.gst-items td:nth-child(6) {
+  text-align: right;
+}
+
+/* Amount in words and GST totals */
+.gst-summary {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr;
+  border-left: 1px solid #222;
+  border-right: 1px solid #222;
+  border-bottom: 1px solid #222;
+  min-height: 0mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.gst-words {
+  border-right: 1px solid #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.gst-words strong {
+  white-space: nowrap;
+}
+
+.gst-words span {
+  font-weight: 700;
+}
+
+.gst-totals {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  align-self: end;
+  font-size: 10px;
+}
+
+.gst-totals th,
+.gst-totals td {
+  border: 1px solid #222;
+  padding: 3px 5px;
+  line-height: 1.1;
+}
+
+.gst-totals th {
+  text-align: left;
+  font-weight: 700;
+}
+
+.gst-totals td {
+  text-align: right;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gst-totals tr:last-child th,
+.gst-totals tr:last-child td {
+  font-weight: 800;
+}
+
+/* Bank details and signature */
+.gst-footer {
+  min-height: 0;
+  padding-top: 5px;
+}
+
+/* Print refinements */
+@media print {
+  .gst-company,
+  .gst-invoice-title,
+  .gst-info,
+  .gst-items,
+  .gst-summary,
+  .gst-footer {
+    max-width: 100%;
+  }
+
+  .gst-items thead {
+    display: table-header-group;
+  }
+
+  .gst-items tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .gst-summary,
+  .gst-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .gst-footer {
+    min-height: 0;
+  }
+}
+.bill-print-signature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.bill-print-sign-space {
+  width: 150px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px auto;
+}
+
+.bill-print-signature-image {
+  display: block;
+  max-width: 145px;
+  max-height: 60px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+@media print {
+  .bill-print-signature-image {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+.gst-to span,
+.gst-site span {
+  display: block;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+
+/* Compact GST item rows; item text remains 12px in preview and PDF. */
+.gst-items th {
+  height: 6mm;
+  padding: 2px 3px;
+  font-size: 12px;
+  line-height: 1.05;
+}
+
+.gst-items td {
+  height: 5mm;
+  padding: 1px 3px;
+  font-size: 12px;
+  line-height: 1.05;
+  vertical-align: middle;
+}
+
+@media print {
+  .gst-items th {
+    height: 6mm !important;
+    padding: 2px 3px !important;
+    font-size: 12px !important;
+    line-height: 1.05 !important;
+  }
+
+  .gst-items td {
+    height: 5mm !important;
+    padding: 1px 3px !important;
+    font-size: 12px !important;
+    line-height: 1.05 !important;
+    vertical-align: middle !important;
+  }
+}
