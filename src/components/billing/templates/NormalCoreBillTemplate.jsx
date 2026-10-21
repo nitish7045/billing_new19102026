@@ -22,6 +22,7 @@ export default function NormalCoreBillTemplate({ bill }) {
     billNo,
     billDate,
     items,
+    deepMode,
     amountInWords,
     grandTotal,
     bankName,
@@ -104,6 +105,7 @@ const signatureUrl =
         <colgroup>
           <col className="normal-col-sr" />
           <col className="normal-col-particular" />
+          {deepMode && <col className="normal-col-qty" />}
           <col className="normal-col-qty" />
           <col className="normal-col-unit" />
           <col className="normal-col-rate" />
@@ -118,15 +120,16 @@ const signatureUrl =
               NO.
             </th>
             <th>PARTICULAR</th>
+            {deepMode && <th>DEEP (IN INCH)</th>}
             <th>QTY</th>
             <th>UNIT</th>
-            <th>RATE</th>
+            <th>{deepMode ? "RATE PER INCH" : "RATE"}</th>
             <th>AMOUNT</th>
           </tr>
         </thead>
 
         <tbody>
-          <BillItemRows items={items} prefix="normal-item" />
+          <BillItemRows items={items} prefix="normal-item" deepMode={deepMode} />
         </tbody>
       </table>
 

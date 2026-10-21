@@ -15,6 +15,7 @@ export default function BillItemsTable({
   onAddManualRow,
   onMoveItem,
   userId,
+  deepMode = false,
 }) {
   /* =========================================================
      MANUAL ROW
@@ -102,6 +103,33 @@ export default function BillItemsTable({
 
   const inputRefs =
     useRef({});
+
+  function focusItemField(itemId, field) {
+    const input = inputRefs.current[`${itemId}:${field}`];
+    if (input) {
+      input.focus();
+      if (typeof input.select === "function") input.select();
+    }
+  }
+
+  function handleItemFieldEnter(event, itemId, field) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const fields = deepMode
+      ? ["deep", "qty", "unit", "rate"]
+      : ["qty", "unit", "rate"];
+    const currentIndex = fields.indexOf(field);
+    if (currentIndex >= 0 && currentIndex < fields.length - 1) {
+      focusItemField(itemId, fields[currentIndex + 1]);
+      return;
+    }
+
+    const currentIndexInItems = items.findIndex((row) => row.id === itemId);
+    const nextProduct = items.slice(currentIndexInItems + 1).find((row) => isProductRow(row));
+    if (nextProduct) {
+      inputRefs.current[nextProduct.id]?.focus();
+    }
+  }
 
   /* =========================================================
      LOAD PRODUCTS
@@ -472,13 +500,11 @@ export default function BillItemsTable({
     );
 
     setTimeout(() => {
-      inputRefs.current[
-        item.id
-      ]?.focus();
-
-      inputRefs.current[
-        item.id
-      ]?.select();
+      if (deepMode) {
+        focusItemField(item.id, "deep");
+      } else {
+        focusItemField(item.id, "qty");
+      }
     }, 0);
   }
 
@@ -2319,6 +2345,7 @@ export default function BillItemsTable({
                 <th className="bill-items-v4-particular-column">
                   PARTICULAR
                 </th>
+                {deepMode && <th className="bill-items-v4-rate-column">DEEP (IN INCH)</th>}
 
                 <th className="bill-items-v4-qty-column">
                   QTY
@@ -2329,7 +2356,7 @@ export default function BillItemsTable({
                 </th>
 
                 <th className="bill-items-v4-rate-column">
-                  RATE
+                  {deepMode ? "RATE PER INCH" : "RATE"}
                 </th>
 
                 <th className="bill-items-v4-amount-column">
@@ -2707,12 +2734,31 @@ export default function BillItemsTable({
 
                         </td>
 
+                        {deepMode && (
+                          <td>
+                            {isProduct && (
+                              <input
+                                ref={(element) => { if (element) inputRefs.current[`${item.id}:deep`] = element; }}
+                                type="number"
+                                min="0"
+                                step="any"
+                                className="bill-items-v4-table-input bill-items-v4-number-input"
+                                value={item.deep ?? ""}
+                                onChange={(event) => onUpdateItem?.(item.id, { deep: event.target.value, deepMode: true })}
+                                onKeyDown={(event) => handleItemFieldEnter(event, item.id, "deep")}
+                                aria-label="Deep (in inch)"
+                              />
+                            )}
+                          </td>
+                        )}
+
                         {/* QTY */}
 
                         <td>
 
                           {isProduct && (
                             <input
+                              ref={(element) => { if (element) inputRefs.current[`${item.id}:qty`] = element; }}
                               type="number"
                               min="0"
                               step="any"
@@ -2721,6 +2767,7 @@ export default function BillItemsTable({
                                 item.qty ??
                                 ""
                               }
+                              onKeyDown={(event) => handleItemFieldEnter(event, item.id, "qty")}
                               onChange={(
                                 event
                               ) =>
@@ -2745,12 +2792,14 @@ export default function BillItemsTable({
 
                           {isProduct && (
                             <input
+                              ref={(element) => { if (element) inputRefs.current[`${item.id}:unit`] = element; }}
                               type="text"
                               className="bill-items-v4-table-input"
                               value={
                                 item.unit ||
                                 ""
                               }
+                              onKeyDown={(event) => handleItemFieldEnter(event, item.id, "unit")}
                               onChange={(
                                 event
                               ) =>
@@ -2775,6 +2824,7 @@ export default function BillItemsTable({
 
                           {isProduct && (
                             <input
+                              ref={(element) => { if (element) inputRefs.current[`${item.id}:rate`] = element; }}
                               type="number"
                               min="0"
                               step="0.01"
@@ -2783,6 +2833,7 @@ export default function BillItemsTable({
                                 item.rate ??
                                 ""
                               }
+                              onKeyDown={(event) => handleItemFieldEnter(event, item.id, "rate")}
                               onChange={(
                                 event
                               ) =>

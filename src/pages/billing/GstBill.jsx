@@ -675,13 +675,7 @@ export default function GstBill({
         /*
          * Reconstruct the bank snapshot stored on the invoice.
          */
-        if (
-          sourceInvoice.bank_id ||
-          sourceInvoice.bank_name ||
-          sourceInvoice.bank_account_number ||
-          sourceInvoice.bank_ifsc_code ||
-          sourceInvoice.bank_branch
-        ) {
+        if (sourceInvoice.bank_id) {
           setBank({
             id:
               sourceInvoice.bank_id ||
@@ -2273,7 +2267,19 @@ export default function GstBill({
             billType: "gst",
             company,
             companyName: company?.company_name || company?.companyName || "",
-            bank,
+            bank: bank || (
+              company?.bank_name ||
+              company?.account_no ||
+              company?.ifsc_code ||
+              company?.bank_branch
+                ? {
+                    bank_name: company?.bank_name || "",
+                    account_number: company?.account_no || "",
+                    ifsc_code: company?.ifsc_code || "",
+                    branch: company?.bank_branch || company?.branch || "",
+                  }
+                : null
+            ),
             signature,
             signatureUrl: signature?.previewUrl || "",
             billNo,
@@ -2290,10 +2296,10 @@ export default function GstBill({
             cgstRate: Number(cgstRate) || 0,
             sgstAmount,
             cgstAmount,
-            bankName: bank?.bank_name || bank?.bankName || "",
-            bankAccountNumber: bank?.account_number || bank?.account_no || bank?.accountNumber || "",
-            bankIfscCode: bank?.ifsc_code || bank?.ifscCode || "",
-            bankBranch: bank?.branch || "",
+            bankName: bank?.bank_name || bank?.bankName || company?.bank_name || "",
+            bankAccountNumber: bank?.account_number || bank?.account_no || bank?.accountNumber || company?.account_no || "",
+            bankIfscCode: bank?.ifsc_code || bank?.ifscCode || company?.ifsc_code || "",
+            bankBranch: bank?.branch || company?.bank_branch || company?.branch || "",
           }}
           autoPrint={previewMode === "print"}
           onClose={() => setPreviewMode(null)}

@@ -57,6 +57,7 @@ export const getBillPrintData = (bill = {}) => {
   return {
     company,
     bank,
+    deepMode: Boolean(bill.deepMode || bill.items?.some((item) => item.deepMode)),
     companyName,
 
     address: billValue(
@@ -96,34 +97,19 @@ export const getBillPrintData = (bill = {}) => {
       "Proprietor"
     ),
 
-    bankName: billValue(
-      bank.bank_name,
-      bank.bankName,
-      company.bank_name,
-      bill.bankName
-    ),
+    // Bank details are invoice-specific: never fall back to company profile
+    // or legacy invoice aliases when no bank was explicitly selected.
+    bankName: billValue(bank.bank_name, bank.bankName),
 
     account: billValue(
       bank.account_number,
       bank.account_no,
-      bank.accountNumber,
-      company.account_no,
-      company.account_number,
-      bill.bankAccountNumber
+      bank.accountNumber
     ),
 
-    ifsc: billValue(
-      bank.ifsc_code,
-      bank.ifscCode,
-      company.ifsc_code,
-      bill.bankIfscCode
-    ),
+    ifsc: billValue(bank.ifsc_code, bank.ifscCode),
 
-    branch: billValue(
-      bank.branch,
-      company.bank_branch,
-      bill.bankBranch
-    ),
+    branch: billValue(bank.branch),
 
     items: Array.isArray(bill.items) ? bill.items : [],
 
@@ -165,7 +151,7 @@ export const getBillPrintData = (bill = {}) => {
  * - Product rows retain their saved amount or calculate qty × rate.
  */
 
-export const BillItemRows = ({ items = [], prefix = "bill" }) => {
+export const BillItemRows = ({ items = [], prefix = "bill", deepMode = false }) => {
   let serialNumber = 0;
 
   return items.map((item, index) => {
@@ -195,6 +181,7 @@ export const BillItemRows = ({ items = [], prefix = "bill" }) => {
 
     const qty = item?.qty ?? item?.quantity;
     const rate = item?.rate ?? item?.unit_rate;
+    const deep = item?.deep;
 
     const isManual =
       item?.type === "manual" ||
@@ -287,7 +274,7 @@ export const BillItemRows = ({ items = [], prefix = "bill" }) => {
       : hasAmount
         ? item.amount
         : hasQty && hasRate
-          ? (Number(qty) || 0) * (Number(rate) || 0)
+          ? (deepMode ? (Number(deep) || 0) : 1) * (Number(qty) || 0) * (Number(rate) || 0)
           : "";
 
     const rateDisplay =
@@ -326,6 +313,8 @@ export const BillItemRows = ({ items = [], prefix = "bill" }) => {
         >
           {displayParticular}
         </td>
+
+        {deepMode && <td className="bill-print-center">{isSpecialRow ? "" : deep ?? ""}</td>}
 
         <td className="bill-print-center">
           {isSpecialRow ? "" : qty ?? ""}

@@ -105,6 +105,7 @@ export default function CoreCuttingBill({
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(null);
   const [roundTotal, setRoundTotal] = useState(false);
+  const [deepMode, setDeepMode] = useState(false);
 
   // ==================================================
   // ITEMS
@@ -222,6 +223,7 @@ export default function CoreCuttingBill({
         setCurrentDraftId(savedDraft.id);
 
         setBillDate(savedDraft.billDate || getToday());
+        setDeepMode(Boolean(savedDraft.deepMode || savedDraft.items?.some((item) => item.deepMode)));
         setEditBillNo(false);
 
         const savedCustomer = savedDraft.customer || null;
@@ -337,13 +339,7 @@ export default function CoreCuttingBill({
         setToAddress(savedInvoice.customer_to || "");
         setSite(savedInvoice.customer_site || "");
 
-        if (
-          savedInvoice.bank_id ||
-          savedInvoice.bank_name ||
-          savedInvoice.bank_account_number ||
-          savedInvoice.bank_ifsc_code ||
-          savedInvoice.bank_branch
-        ) {
+        if (savedInvoice.bank_id) {
           setBank({
             id: savedInvoice.bank_id || null,
             bank_name: savedInvoice.bank_name || "",
@@ -365,6 +361,7 @@ export default function CoreCuttingBill({
         );
 
         setRoundTotal(Boolean(savedInvoice.is_rounded));
+        setDeepMode(Boolean(savedInvoice.deep_mode));
 
         setItems(
           savedItems.map((item, index) => {
@@ -375,9 +372,11 @@ export default function CoreCuttingBill({
             const rate = isManual
               ? item.rate ?? null
               : Number(item.rate) || 0;
+            const deep = isManual ? item.deep ?? null : Number(item.deep) || 0;
+            const itemDeepMode = Boolean(item.deepMode);
             const amount = isManual
               ? item.amount ?? null
-              : Number((qty * rate).toFixed(2));
+              : Number(((itemDeepMode ? deep : 1) * (Number(qty) || 0) * (Number(rate) || 0)).toFixed(2));
 
             return {
               id: item.id || crypto.randomUUID(),
@@ -388,6 +387,8 @@ export default function CoreCuttingBill({
               qty,
               unit: item.unit || "",
               rate,
+              deep,
+              deepMode: itemDeepMode,
               amount,
               sort_order: item.sort_order ?? index,
               isManual,
@@ -528,6 +529,7 @@ export default function CoreCuttingBill({
         bank,
         signature,
         items,
+        deepMode,
         subtotal,
         grandTotal,
         roundTotal,
@@ -555,7 +557,7 @@ export default function CoreCuttingBill({
       if (finalSavingRef.current || restoringRef.current || !restoredRef.current) return;
       const draftData = buildDraftData({
         profile, company, currentDraftId, billNo, billDate, customer, toAddress, site,
-        bank, signature, items, subtotal, grandTotal, roundTotal, roundOff, amountInWords,
+        bank, signature, items, deepMode, subtotal, grandTotal, roundTotal, roundOff, amountInWords,
         originalDraft: originalDraftRef.current, createdAt: createdAtRef.current,
       });
       draftData.invoiceId = isEditMode ? invoiceId : null;
@@ -583,6 +585,7 @@ export default function CoreCuttingBill({
     bank,
     signature,
     items,
+    deepMode,
     subtotal,
     grandTotal,
     roundTotal,
@@ -735,6 +738,7 @@ export default function CoreCuttingBill({
             invoice?.signature_path ||
             null,
           billType: "corecutting",
+          deepMode,
           billNumber: finalBillNo,
           billDate,
           items,
@@ -813,6 +817,7 @@ export default function CoreCuttingBill({
         signaturePath:
           signature?.path || signature?.storage_path || null,
         billType: "corecutting",
+        deepMode,
         billNumber: finalBillNo,
         billDate,
         items,
@@ -1119,9 +1124,21 @@ export default function CoreCuttingBill({
       />
 
       {/* PRODUCT ENTRY */}
+      <div className="corecutting-deep-mode-toggle" style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,padding:"12px 14px",margin:"12px 0",border:"1px solid #dbe3ef",borderRadius:10,background:deepMode ? "#eff6ff" : "#fff"}}>
+        <div>
+          <strong>Deep (in inch) × Rate per inch mode</strong>
+          <div style={{fontSize:12,color:"#64748b",marginTop:3}}>Amount = Deep (in inch) × Rate per inch × Qty</div>
+        </div>
+        <button type="button" aria-pressed={deepMode} onClick={() => {
+          const next = !deepMode;
+          setDeepMode(next);
+          setItems((previous) => previous.map((item) => item.type === "product" ? ({...item, deepMode: next, amount: (next ? (Number(item.deep) || 0) : 1) * (Number(item.qty) || 0) * (Number(item.rate) || 0)}) : item));
+        }} style={{border:0,borderRadius:8,padding:"9px 14px",fontWeight:700,cursor:"pointer",background:deepMode ? "#2563eb" : "#e2e8f0",color:deepMode ? "#fff" : "#334155"}}>{deepMode ? "ON" : "OFF"}</button>
+      </div>
       <ProductEntry
         userId={profile?.id}
-        onAddItem={addItem}
+        deepMode={deepMode}
+        onAddItem={(item) => addItem({...item, deepMode})}
       />
 
       {/* ITEMS: Always render the table, including when the bill is empty. */}
@@ -1132,6 +1149,7 @@ export default function CoreCuttingBill({
         onAddManualRow={addManualRow}
         onMoveItem={moveItem}
         userId={profile?.id}
+        deepMode={deepMode}
       />
 
       {/* TOTALS */}
@@ -1235,6 +1253,7 @@ export default function CoreCuttingBill({
         <BillPreviewModal
           bill={{
             billType: "corecutting",
+            deepMode,
             company,
             companyName: company?.company_name || company?.companyName || "",
             bank,
@@ -1285,6 +1304,7 @@ function buildDraftData({
   bank,
   signature,
   items,
+  deepMode = false,
   subtotal,
   grandTotal,
   roundTotal,
@@ -1298,6 +1318,7 @@ function buildDraftData({
     userId: profile?.id || null,
     companyId: company?.id || null,
     billType: "corecutting",
+    deepMode: Boolean(deepMode),
     challanType: null,
     company: company ? { ...company } : null,
     companyName:
@@ -1333,6 +1354,8 @@ function buildDraftData({
         item.qty == null ? null : Number(item.qty),
       rate:
         item.rate == null ? null : Number(item.rate),
+      deep: item.deep == null ? null : Number(item.deep),
+      deepMode: Boolean(item.deepMode || deepMode),
       amount:
         item.amount == null ? null : Number(item.amount),
       sort_order: item.sort_order ?? index,

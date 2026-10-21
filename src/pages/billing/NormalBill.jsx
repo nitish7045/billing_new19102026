@@ -790,13 +790,7 @@ export default function NormalBill({
          * accidentally replace its historical bank details
          * with today's company bank.
          */
-        if (
-          savedInvoice.bank_id ||
-          savedInvoice.bank_name ||
-          savedInvoice.bank_account_number ||
-          savedInvoice.bank_ifsc_code ||
-          savedInvoice.bank_branch
-        ) {
+        if (savedInvoice.bank_id) {
           setBank({
             id:
               savedInvoice.bank_id ||

@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 export default function ProductEntry({
   userId,
   onAddItem,
+  deepMode = false,
 }) {
   const [products, setProducts] = useState([]);
 
@@ -14,6 +15,7 @@ export default function ProductEntry({
   const [qty, setQty] = useState("1");
   const [unit, setUnit] = useState("Nos");
   const [rate, setRate] = useState("");
+  const [deep, setDeep] = useState("");
 
   const [selectedProductId, setSelectedProductId] =
     useState(null);
@@ -28,6 +30,7 @@ export default function ProductEntry({
   const notesRef = useRef(null);
   const qtyRef = useRef(null);
   const unitRef = useRef(null);
+  const deepRef = useRef(null);
   const rateRef = useRef(null);
   const addButtonRef = useRef(null);
 
@@ -143,6 +146,7 @@ export default function ProductEntry({
     setQty("1");
     setUnit("Nos");
     setRate("");
+    setDeep("");
 
     setSelectedProductId(null);
     setShowSuggestions(false);
@@ -210,6 +214,8 @@ export default function ProductEntry({
       unit: unit.trim(),
 
       rate: itemRate,
+      deep: deepMode ? Number(deep) || 0 : 0,
+      deepMode: Boolean(deepMode),
     });
 
     clearForm();
@@ -399,22 +405,34 @@ export default function ProductEntry({
    */
 
   function handleUnitKeyDown(event) {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" || event.key === "ArrowDown") {
       event.preventDefault();
-
-      rateRef.current?.focus();
-    }
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-
-      rateRef.current?.focus();
+      (deepMode ? deepRef : rateRef).current?.focus();
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
 
       qtyRef.current?.focus();
+    }
+  }
+
+  /*
+   * =========================================================
+   * DEEP KEYBOARD
+   * =========================================================
+   */
+
+  function handleDeepKeyDown(event) {
+    if (event.key === "Enter" || event.key === "ArrowDown") {
+      event.preventDefault();
+      rateRef.current?.focus();
+      rateRef.current?.select();
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      unitRef.current?.focus();
     }
   }
 
@@ -436,7 +454,7 @@ export default function ProductEntry({
     if (event.key === "ArrowUp") {
       event.preventDefault();
 
-      unitRef.current?.focus();
+      (deepMode ? deepRef : unitRef).current?.focus();
     }
   }
 
@@ -1313,13 +1331,30 @@ export default function ProductEntry({
             />
           </div>
 
+          {deepMode && (
+            <div className="product-entry-v5-field">
+              <label className="product-entry-v5-label">Deep (in inch) *</label>
+              <input
+                ref={deepRef}
+                type="number"
+                min="0"
+                step="any"
+                className="product-entry-v5-input"
+                placeholder="Deep (in inch)"
+                value={deep}
+                onChange={(event) => setDeep(event.target.value)}
+                onKeyDown={handleDeepKeyDown}
+              />
+            </div>
+          )}
+
           {/* ===================================================
               RATE
               =================================================== */}
 
           <div className="product-entry-v5-field">
             <label className="product-entry-v5-label">
-              Rate
+              {deepMode ? "Rate per inch" : "Rate"}
               <span className="product-entry-v5-label-required">
                 *
               </span>

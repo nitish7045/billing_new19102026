@@ -1,4 +1,3 @@
-
 @import "./BillPrintBase.css";
 
 /* GST company header */
@@ -83,13 +82,14 @@
 .gst-meta-row span {
   padding: 8px 6px;
   min-height: 26px;
-  /* border-bottom: 1px solid #222; */
   overflow-wrap: anywhere;
 }
-/* 
+
+/*
 .gst-meta-row strong {
   border-right: 1px solid #222;
-} */
+}
+*/
 
 .gst-meta-row span {
   font-weight: 700;
@@ -231,7 +231,7 @@
 /* Bank details and signature */
 .gst-footer {
   min-height: 0;
-  padding-top: 5px;
+  padding-top: 18px;
 }
 
 /* Print refinements */
@@ -262,8 +262,11 @@
 
   .gst-footer {
     min-height: 0;
+    padding-top: 18px;
   }
 }
+
+/* Signature layout */
 .bill-print-signature {
   display: flex;
   flex-direction: column;
@@ -295,6 +298,8 @@
     print-color-adjust: exact;
   }
 }
+
+/* Preserve line breaks in customer and site details */
 .gst-to span,
 .gst-site span {
   display: block;
@@ -303,8 +308,7 @@
   overflow-wrap: anywhere;
 }
 
-
-/* Compact GST item rows; item text remains 12px in preview and PDF. */
+/* Compact GST item rows; item text remains 12px */
 .gst-items th {
   height: 6mm;
   padding: 2px 3px;

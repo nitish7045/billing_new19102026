@@ -242,6 +242,7 @@ function buildInvoiceData({
   roundOff,
   amountInWords,
   notes,
+  deepMode = false,
   isdelete = 0,
   status = "saved",
 }) {
@@ -249,20 +250,31 @@ function buildInvoiceData({
     company?.company_name || "";
   const companyGstNo =
     company?.gst_no || "";
+  // Bank rules:
+  // - GST: use an explicitly selected bank when present; otherwise use the
+  //   bank details saved with the company.
+  // - Normal/Core Cutting: show bank details only when a bank was selected.
+  const isGstBill = String(billType || "").toLowerCase() === "gst";
   const bankName =
     bank?.bank_name ||
-    company?.bank_name ||
+    bank?.bankName ||
+    (isGstBill ? company?.bank_name : "") ||
     "";
   const bankAccountNumber =
     bank?.account_number ||
-    company?.account_no ||
+    bank?.account_no ||
+    bank?.accountNumber ||
+    (isGstBill ? company?.account_no : "") ||
     "";
   const bankIfscCode =
     bank?.ifsc_code ||
-    company?.ifsc_code ||
+    bank?.ifscCode ||
+    (isGstBill ? company?.ifsc_code : "") ||
     "";
   const bankBranch =
-    bank?.branch || "";
+    bank?.branch ||
+    (isGstBill ? company?.bank_branch || company?.branch : "") ||
+    "";
   return {
     user_id:
       profile.id,
@@ -272,6 +284,7 @@ function buildInvoiceData({
       bank?.id || null,
     bill_type:
       billType,
+    deep_mode: Boolean(deepMode),
     bill_number:
       billNumber,
     bill_date:
@@ -348,8 +361,9 @@ function buildInvoiceItems({
         isManual
           ? null
           : Number(item.rate) || 0;
+      const deep = isManual ? null : (Number(item.deep) || 0);
       const calculatedAmount =
-        quantity * rate;
+        quantity * rate * (item.deepMode ? deep : 1);
       const amount =
         isManual
           ? 0
@@ -387,6 +401,7 @@ function buildInvoiceItems({
         unit:
           item.unit || "",
         rate,
+        deep,
         amount,
         sort_order:
           index,
@@ -423,6 +438,7 @@ export async function saveInvoice({
   roundOff = 0,
   amountInWords = "",
   notes = "",
+  deepMode = false,
 }) {
   if (!profile?.id) {
     throw new Error(
@@ -484,6 +500,7 @@ export async function saveInvoice({
       roundOff,
       amountInWords,
       notes,
+      deepMode,
       isdelete: 0,
       status:
         "saved",
@@ -597,6 +614,7 @@ export async function updateInvoice({
   roundOff = 0,
   amountInWords = "",
   notes = "",
+  deepMode = false,
   status = "saved",
 }) {
   if (!profile?.id) {
@@ -659,6 +677,7 @@ export async function updateInvoice({
       roundOff,
       amountInWords,
       notes,
+      deepMode,
       isdelete: 0,
       status,
     });
@@ -962,6 +981,7 @@ export async function getInvoice({
       company_id,
       bank_id,
       bill_type,
+      deep_mode,
       bill_number,
       bill_date,
       customer_id,
@@ -1057,6 +1077,7 @@ export async function getInvoiceItems({
       qty,
       unit,
       rate,
+      deep,
       amount,
       sort_order,
       is_manual,
@@ -1131,6 +1152,8 @@ export async function getInvoiceItems({
               : Number(
                   item.rate
                 ),
+          deep: item.deep == null ? 0 : Number(item.deep),
+          deepMode: Boolean(invoice.deep_mode),
           amount:
             Number(
               item.amount

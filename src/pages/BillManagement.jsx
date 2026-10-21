@@ -196,6 +196,7 @@ export default function BillManagement({
             company_id,
             bank_id,
             bill_type,
+            deep_mode,
             bill_number,
             bill_date,
             customer_id,
@@ -850,6 +851,7 @@ export default function BillManagement({
           qty,
           unit,
           rate,
+          deep,
           amount,
           sort_order,
           is_manual,
@@ -936,7 +938,7 @@ export default function BillManagement({
           .from("invoice_items")
           .select(`
             id, invoice_id, product_id, particular, notes,
-            qty, unit, rate, amount, sort_order, is_manual,
+            qty, unit, rate, deep, amount, sort_order, is_manual,
             bold, center, show_sr_no
           `)
           .eq("invoice_id", invoice.id)
@@ -960,12 +962,57 @@ export default function BillManagement({
         gst_no: invoice.company_gst_no || "",
       };
 
-      const bank = {
-        bank_name: invoice.bank_name || "",
-        account_number: invoice.bank_account_number || "",
-        ifsc_code: invoice.bank_ifsc_code || "",
-        branch: invoice.bank_branch || "",
-      };
+      // Bank display rules for saved invoice preview/PDF:
+      // - Normal/Core Cutting: show details only when bank_id was selected.
+      // - GST: selected bank takes precedence; otherwise use the bank snapshot
+      //   saved with the invoice, falling back to the company's saved bank data.
+      const isGstInvoice =
+        String(invoice.bill_type || "").toLowerCase() === "gst";
+
+      const companyBankHasDetails = Boolean(
+        company?.bank_name ||
+        company?.account_no ||
+        company?.ifsc_code ||
+        company?.bank_branch ||
+        company?.branch
+      );
+
+      const bank = invoice.bank_id
+        ? {
+            id: invoice.bank_id,
+            bank_name: invoice.bank_name || "",
+            account_number: invoice.bank_account_number || "",
+            ifsc_code: invoice.bank_ifsc_code || "",
+            branch: invoice.bank_branch || "",
+          }
+        : isGstInvoice && (
+            invoice.bank_name ||
+            invoice.bank_account_number ||
+            invoice.bank_ifsc_code ||
+            invoice.bank_branch ||
+            companyBankHasDetails
+          )
+          ? {
+              id: null,
+              bank_name:
+                invoice.bank_name ||
+                company?.bank_name ||
+                "",
+              account_number:
+                invoice.bank_account_number ||
+                company?.account_no ||
+                "",
+              ifsc_code:
+                invoice.bank_ifsc_code ||
+                company?.ifsc_code ||
+                "",
+              branch:
+                invoice.bank_branch ||
+                company?.bank_branch ||
+                company?.branch ||
+                "",
+            }
+          : null;
 
       const subtotal = Number(invoice.subtotal || 0);
       const sgstAmount = Number(invoice.sgst_amount || 0);
@@ -989,6 +1036,7 @@ setPreviewBill({
     .replace(/\s+/g, " ")
     .trim(),
 
+  deepMode: Boolean(invoice.deep_mode),
   billType:
     invoice.bill_type === "gst"
       ? "gst"
@@ -1007,6 +1055,8 @@ setPreviewBill({
   items: (savedItems || []).map((item) => ({
     ...item,
     type: item.is_manual ? "manual" : "product",
+    deep: item.deep == null ? 0 : Number(item.deep),
+    deepMode: Boolean(invoice.deep_mode),
     showSrNo: item.show_sr_no,
   })),
 
@@ -2793,6 +2843,8 @@ setPreviewBill({
                           Particular
                         </th>
 
+                        {selectedBill?.deep_mode && <th>Deep (in inch)</th>}
+
                         <th>
                           Qty
                         </th>
@@ -2802,7 +2854,7 @@ setPreviewBill({
                         </th>
 
                         <th>
-                          Rate
+                          {selectedBill?.deep_mode ? "Rate per inch" : "Rate"}
                         </th>
 
                         <th>
@@ -2889,6 +2941,8 @@ setPreviewBill({
                               )}
 
                             </td>
+
+                            {selectedBill?.deep_mode && <td>{item.is_manual ? "" : (item.deep ?? 0)}</td>}
 
                             <td>
                               {item.qty ===

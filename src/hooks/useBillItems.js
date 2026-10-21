@@ -14,6 +14,8 @@ export function useBillItems() {
     qty,
     unit = "",
     rate,
+    deep = 0,
+    deepMode = false,
   }) {
     const quantity = Number(qty) || 0;
     const itemRate = Number(rate) || 0;
@@ -27,7 +29,9 @@ export function useBillItems() {
       qty: quantity,
       unit: unit || "",
       rate: itemRate,
-      amount: quantity * itemRate,
+      deep: Number(deep) || 0,
+      deepMode: Boolean(deepMode),
+      amount: (deepMode ? (Number(deep) || 0) : 1) * quantity * itemRate,
 
       // Product rows count towards Sr. No.
       showSrNo: true,
@@ -79,7 +83,7 @@ export function useBillItems() {
             Number(updatedItem.rate) || 0;
 
           updatedItem.amount =
-            quantity * rate;
+            (updatedItem.deepMode ? (Number(updatedItem.deep) || 0) : 1) * quantity * rate;
         }
 
         return updatedItem;
