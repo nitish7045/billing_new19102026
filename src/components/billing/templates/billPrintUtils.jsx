@@ -50,10 +50,6 @@ export const getBillPrintData = (bill = {}) => {
     "COMPANY NAME"
   );
 
-  const defaultAddress = isGst
-    ? "Piramal Holding, MMRDA Colony k12/512 Kanjurmarg west, Mumbai 400078"
-    : "PIRAMAL HOLDING, M.M.R.D.A COLONY, BLD NO-K12 ROOM NO-512 KANJURMARG (W), MUMBAI 400078.";
-
   return {
     company,
     bank,
@@ -66,18 +62,17 @@ export const getBillPrintData = (bill = {}) => {
       company.companyAddress,
       company.full_address,
       company.billing_address,
-      company.billingAddress,
-      defaultAddress
+      company.billingAddress
     ),
 
-    contact: billValue(
-      company.contact_number,
-      company.phone,
-      company.mobile,
-      company.phone_number,
-      company.contact_no,
-      !isGst ? "+91 9766968555" : ""
-    ),
+    // contact: billValue(
+    //   company.contact_number,
+    //   company.phone,
+    //   company.mobile,
+    //   company.phone_number,
+    //   company.contact_no,
+    //   !isGst ? "+91 9766968555" : ""
+    // ),
 
     gstNo: billValue(
       company.gst_no,

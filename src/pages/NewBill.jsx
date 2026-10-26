@@ -73,6 +73,12 @@ function NewBill({ profile, onProceed }) {
   const [companyName, setCompanyName] =
     useState("");
 
+  const [companyAddress, setCompanyAddress] =
+    useState("");
+
+  const [copyAddressCompanyId, setCopyAddressCompanyId] =
+    useState("");
+
   const [gstNo, setGstNo] =
     useState("");
 
@@ -145,6 +151,8 @@ function NewBill({ profile, onProceed }) {
 
   function resetCompanyForm() {
     setCompanyName("");
+    setCompanyAddress("");
+    setCopyAddressCompanyId("");
     setGstNo("");
     setBankName("");
     setAccountNo("");
@@ -188,6 +196,10 @@ function NewBill({ profile, onProceed }) {
 
     setCompanyName(
       company.company_name || ""
+    );
+
+    setCompanyAddress(
+      company.address || company.company_address || company.companyAddress || ""
     );
 
     setGstNo(
@@ -287,6 +299,9 @@ function NewBill({ profile, onProceed }) {
         company_name:
           companyName.trim(),
 
+        address:
+          companyAddress.trim() || null,
+
         gst_no:
           gstNo.trim() || null,
 
@@ -373,6 +388,9 @@ function NewBill({ profile, onProceed }) {
       const updateData = {
         company_name:
           companyName.trim(),
+
+        address:
+          companyAddress.trim() || null,
 
         gst_no:
           gstNo.trim() || null,
@@ -1812,6 +1830,12 @@ function NewBill({ profile, onProceed }) {
                   setCompanyName
                 }
 
+                companyAddress={companyAddress}
+                setCompanyAddress={setCompanyAddress}
+                companies={companies}
+                copyAddressCompanyId={copyAddressCompanyId}
+                setCopyAddressCompanyId={setCopyAddressCompanyId}
+
                 gstNo={gstNo}
                 setGstNo={setGstNo}
 
@@ -1909,6 +1933,12 @@ function NewBill({ profile, onProceed }) {
                   setCompanyName
                 }
 
+                companyAddress={companyAddress}
+                setCompanyAddress={setCompanyAddress}
+                companies={companies}
+                copyAddressCompanyId={copyAddressCompanyId}
+                setCopyAddressCompanyId={setCopyAddressCompanyId}
+
                 gstNo={gstNo}
                 setGstNo={setGstNo}
 
@@ -1974,6 +2004,11 @@ function NewBill({ profile, onProceed }) {
 function CompanyForm({
   companyName,
   setCompanyName,
+  companyAddress,
+  setCompanyAddress,
+  companies = [],
+  copyAddressCompanyId,
+  setCopyAddressCompanyId,
 
   gstNo,
   setGstNo,
@@ -2012,6 +2047,43 @@ function CompanyForm({
           required
         />
 
+      </div>
+
+      {/* COMPANY ADDRESS */}
+      <div style={styles.field}>
+        <label style={styles.label}>Company Address</label>
+        <textarea
+          value={companyAddress}
+          onChange={(e) => setCompanyAddress(e.target.value)}
+          placeholder={"Enter company address. Press Enter to keep each line separate.\nExample: Shop No. 12, Main Road\nMumbai, Maharashtra - 400001"}
+          rows={4}
+          style={{ ...styles.input, minHeight: "100px", resize: "vertical", fontFamily: "inherit", whiteSpace: "pre-wrap", lineHeight: 1.5 }}
+        />
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "8px" }}>
+          <select
+            value={copyAddressCompanyId}
+            onChange={(e) => setCopyAddressCompanyId(e.target.value)}
+            style={{ ...styles.input, flex: "1 1 220px", minWidth: 0 }}
+            aria-label="Choose company to copy address from"
+          >
+            <option value="">Copy address from existing company...</option>
+            {companies.filter((item) => item.address || item.company_address || item.companyAddress).map((item) => (
+              <option key={item.id} value={item.id}>{item.company_name}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={!copyAddressCompanyId}
+            onClick={() => {
+              const source = companies.find((item) => String(item.id) === String(copyAddressCompanyId));
+              if (source) setCompanyAddress(source.address || source.company_address || source.companyAddress || "");
+            }}
+            style={{ ...styles.cancelButton, padding: "10px 14px", whiteSpace: "nowrap", opacity: copyAddressCompanyId ? 1 : 0.55 }}
+          >
+            Copy Address
+          </button>
+        </div>
+        <small style={{ color: "#64748b" }}>Use this to quickly reuse an address for another company.</small>
       </div>
 
       {/* GST DETAILS */}

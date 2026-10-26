@@ -29,8 +29,11 @@
 }
 
 .normal-company p {
-  white-space: normal;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  text-align: center;
   font-size: 12px;
+  line-height: 1.3;
 }
 
 /* Bill Information */

@@ -68,7 +68,7 @@ const signatureUrl =
       <header className="bill-print-company normal-company">
         <h1>{companyName}</h1>
         <p>{address}</p>
-        <p>CONTACT NO- {contact}</p>
+       
       </header>
 
       <section className="normal-info">
