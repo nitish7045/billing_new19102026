@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import html2pdf from "html2pdf.js";
+import { supabase } from "../../lib/supabase";
 import BillPrintTemplate from "./templates/BillPrintTemplate";
 import "./BillPreviewModal.css";
 
@@ -9,6 +10,49 @@ export default function BillPreviewModal({
   autoPrint = false,
 }) {
   const [exporting, setExporting] = useState(false);
+  const [resolvedSignatureUrl, setResolvedSignatureUrl] = useState("");
+
+  // A stored signature_path is a Storage path, not an image URL. Resolve it
+  // whenever a preview opens so saved bills and PDF exports show the image too.
+  const signaturePath =
+    bill?.signature?.path ||
+    bill?.signature?.storage_path ||
+    bill?.signature_path ||
+    "";
+  const immediateSignatureUrl =
+    bill?.signatureUrl ||
+    bill?.signature?.previewUrl ||
+    bill?.signature?.preview_url ||
+    bill?.signature?.url ||
+    bill?.signature?.publicUrl ||
+    bill?.signature?.public_url ||
+    "";
+
+  useEffect(() => {
+    let cancelled = false;
+    setResolvedSignatureUrl(signaturePath ? "" : (immediateSignatureUrl || ""));
+    if (signaturePath) {
+      // Always refresh the signed URL from the persisted Storage path. The
+      // selector's preview URL may have expired by the time a bill is edited.
+      const path = String(signaturePath).replace(/^\/+/, "");
+      supabase.storage.from("signatures").createSignedUrl(path, 60 * 60)
+        .then(({ data, error }) => {
+          if (error) throw error;
+          if (!cancelled) setResolvedSignatureUrl(data?.signedUrl || "");
+        })
+        .catch((error) => {
+          console.error("Could not load bill signature:", error);
+          if (!cancelled) setResolvedSignatureUrl(immediateSignatureUrl || "");
+        });
+    }
+    return () => { cancelled = true; };
+  }, [signaturePath, immediateSignatureUrl]);
+
+  const displayBill = {
+    ...bill,
+    signatureUrl: resolvedSignatureUrl,
+    signature: bill?.signature ? { ...bill.signature, previewUrl: resolvedSignatureUrl } : bill?.signature,
+  };
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -67,6 +111,19 @@ export default function BillPreviewModal({
     setExporting(true);
 
     try {
+      // Wait for all images (especially the asynchronously signed signature URL)
+      // to finish loading before html2canvas captures the bill.
+      await Promise.all(
+        Array.from(element.querySelectorAll("img")).map((img) => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.addEventListener("load", resolve, { once: true });
+            img.addEventListener("error", resolve, { once: true });
+            window.setTimeout(resolve, 5000);
+          });
+        })
+      );
+
       const fileName = `${getSafeFileName()}.pdf`;
 
       const options = {
@@ -207,7 +264,7 @@ export default function BillPreviewModal({
       </div>
 
       <div className="bill-preview-scroll">
-        <BillPrintTemplate bill={bill} />
+        <BillPrintTemplate bill={displayBill} />
       </div>
     </div>
   );

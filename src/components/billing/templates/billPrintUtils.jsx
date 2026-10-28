@@ -62,7 +62,15 @@ export const getBillPrintData = (bill = {}) => {
       company.companyAddress,
       company.full_address,
       company.billing_address,
-      company.billingAddress
+      company.billingAddress,
+      company.address_line1,
+      company.address_line_1,
+      company.address_line_2,
+      company.registered_address,
+      company.office_address,
+      bill.companyAddress,
+      bill.company_address,
+      bill.address
     ),
 
     // contact: billValue(
@@ -110,6 +118,8 @@ export const getBillPrintData = (bill = {}) => {
 
     customerTo: billValue(
       bill.customerTo,
+      bill.to_address,
+      bill.customer_to,
       bill.customer?.to_address,
       bill.customer?.toAddress
     ),
