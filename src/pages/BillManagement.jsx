@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from "react";
 
 import { supabase } from "../lib/supabase";
@@ -16,6 +17,26 @@ import "./BillManagement.css";
 
 const BILL_TYPES = ["all", "normal", "gst", "corecutting"];
 const PAGE_SIZE = 20;
+
+function getBillManagementPreferenceKey(userId) {
+  return userId
+    ? `bill-management-preferences:${userId}`
+    : null;
+}
+
+function readBillManagementPreferences(userId) {
+  const key = getBillManagementPreferenceKey(userId);
+  if (!key || typeof window === "undefined") return null;
+
+  try {
+    const saved = window.localStorage.getItem(key);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
 /* =========================================================
    HELPERS
@@ -125,6 +146,68 @@ export default function BillManagement({
 
   const [page, setPage] =
     useState(1);
+
+  // Restore search, filters, sorting and pagination for this signed-in user.
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const loadedPreferencesUser = useRef(null);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    if (loadedPreferencesUser.current === profile.id) return;
+
+    const saved = readBillManagementPreferences(profile.id);
+    if (saved) {
+      setSearch(typeof saved.search === "string" ? saved.search : "");
+      setBillTypeFilter(BILL_TYPES.includes(saved.billTypeFilter) ? saved.billTypeFilter : "all");
+      setPaymentFilter(["all", "paid", "unpaid", "partial"].includes(saved.paymentFilter) ? saved.paymentFilter : "all");
+      setDeleteFilter(["active", "deleted", "all"].includes(saved.deleteFilter) ? saved.deleteFilter : "active");
+      setCompanyFilter(typeof saved.companyFilter === "string" ? saved.companyFilter : "all");
+      setImportantOnly(Boolean(saved.importantOnly));
+      setDateFrom(typeof saved.dateFrom === "string" ? saved.dateFrom : "");
+      setDateTo(typeof saved.dateTo === "string" ? saved.dateTo : "");
+      setSortBy(["newest", "oldest", "highest", "lowest", "bill-number"].includes(saved.sortBy) ? saved.sortBy : "newest");
+      setPage(Number.isInteger(saved.page) && saved.page > 0 ? saved.page : 1);
+    }
+
+    loadedPreferencesUser.current = profile.id;
+    setPreferencesLoaded(true);
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (!profile?.id || !preferencesLoaded || typeof window === "undefined") return;
+
+    const key = getBillManagementPreferenceKey(profile.id);
+    try {
+      window.localStorage.setItem(key, JSON.stringify({
+        search,
+        billTypeFilter,
+        paymentFilter,
+        deleteFilter,
+        companyFilter,
+        importantOnly,
+        dateFrom,
+        dateTo,
+        sortBy,
+        page,
+      }));
+    } catch (error) {
+      // Keep the page usable if browser storage is disabled or full.
+      console.warn("Could not save Bill Management preferences:", error);
+    }
+  }, [
+    profile?.id,
+    preferencesLoaded,
+    search,
+    billTypeFilter,
+    paymentFilter,
+    deleteFilter,
+    companyFilter,
+    importantOnly,
+    dateFrom,
+    dateTo,
+    sortBy,
+    page,
+  ]);
 
   /* =======================================================
      ITEMS MODAL
